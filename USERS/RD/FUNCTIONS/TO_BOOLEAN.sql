@@ -1,0 +1,32 @@
+SET SERVEROUTPUT ON;
+SET TIMING ON;
+
+CREATE OR REPLACE
+FUNCTION TO_BOOLEAN(gBOOL IN VARCHAR2)
+RETURN CHAR
+DETERMINISTIC PARALLEL_ENABLE
+AS
+    
+    PRAGMA UDF;
+    
+BEGIN
+    
+    RETURN CASE UPPER(gBOOL)
+        WHEN 'N' THEN 'F'
+        WHEN 'Y' THEN 'T'
+        WHEN 'F' THEN 'F'
+        WHEN 'T' THEN 'T'
+        WHEN '0' THEN 'F'
+        WHEN '1' THEN 'T'
+        WHEN 'FALSE' THEN 'F'
+        WHEN 'TRUE' THEN 'T'
+        WHEN 'NO' THEN 'F'
+        WHEN 'YES' THEN 'T'
+        WHEN '⊥' THEN 'F'
+        WHEN '¬T' THEN 'F'
+        WHEN '¬⊥' THEN 'T'
+        ELSE NULL
+    END;
+    
+END;
+/

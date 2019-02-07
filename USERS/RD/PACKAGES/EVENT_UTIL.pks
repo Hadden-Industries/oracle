@@ -1,0 +1,11 @@
+CREATE OR REPLACE 
+PACKAGE EVENT_UTIL
+AS
+    
+    PROCEDURE DELETE
+    (
+        p_ID IN EVENT.ID%TYPE
+    );
+    
+END;
+/

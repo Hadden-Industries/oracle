@@ -1,0 +1,35 @@
+CREATE OR REPLACE
+FUNCTION NAMEPARTSTONAMESHORT
+(
+    gGivenNames IN VARCHAR2,
+    gSurname IN VARCHAR2 DEFAULT NULL
+)
+RETURN VARCHAR2
+DETERMINISTIC PARALLEL_ENABLE
+AS
+    
+    PRAGMA UDF;
+    
+BEGIN
+    
+    RETURN CASE
+        WHEN INSTRB(gGivenNames, CHR(32)) > 0 THEN SUBSTRB(gGivenNames, 1, INSTRB(gGivenNames, CHR(32)) - 1)
+        ELSE gGivenNames
+    END
+    || CASE
+        WHEN gSurname IS NOT NULL THEN ' '
+        ELSE NULL
+    END
+    || gSurname;
+    
+END;
+/
+
+/*
+--test
+SELECT NAMEPARTSTONAMESHORT(NULL)
+FROM DUAL;
+
+SELECT NAMEPARTSTONAMESHORT('David John', 'Smith')
+FROM DUAL;
+*/

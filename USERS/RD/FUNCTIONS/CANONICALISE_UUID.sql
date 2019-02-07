@@ -1,0 +1,40 @@
+CREATE OR REPLACE
+FUNCTION CANONICALISE_UUID(UUID RAW)
+RETURN VARCHAR2
+DETERMINISTIC PARALLEL_ENABLE
+AS
+
+    PRAGMA UDF;
+    vUUID CHAR(32 BYTE) := CASE
+        --http://www.itu.int/rec/T-REC-X.667-201210-I/en
+        --6.5.4 Software generating the hexadecimal representation of a UUID shall not use upper case letters
+        WHEN UUID IS NOT NULL THEN LOWER
+        (
+            RAWTOHEX(UUID)
+        )
+        ELSE '00000000000000000000000000000000'
+    END;
+
+BEGIN
+
+    RETURN SUBSTRB(vUUID, 1, 8)
+    || '-' || SUBSTRB(vUUID, 9, 4)
+    || '-' || SUBSTRB(vUUID,13, 4)
+    || '-' || SUBSTRB(vUUID,17, 4)
+    || '-' || SUBSTRB(vUUID, 21);
+
+END ;
+/
+
+/*
+--test
+SELECT CANONICALISE_UUID(SYS_GUID())
+FROM DUAL;
+
+SELECT CANONICALISE_UUID(NULL)
+FROM DUAL;
+
+SELECT UUID,
+CANONICALISE_UUID(UUID)
+FROM PERSON;
+*/

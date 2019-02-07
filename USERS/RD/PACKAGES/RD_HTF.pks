@@ -1,0 +1,31 @@
+CREATE OR REPLACE 
+PACKAGE RD_HTF
+AS
+    
+    FUNCTION SPAN
+    (
+        ctext IN VARCHAR2,
+        cattributes IN VARCHAR2 DEFAULT ''
+    )
+    RETURN VARCHAR2
+    DETERMINISTIC PARALLEL_ENABLE;
+    
+    FUNCTION TIME
+    (
+        ctext IN VARCHAR2,
+        cdatetime IN VARCHAR2 DEFAULT NULL
+        
+    )
+    RETURN VARCHAR2
+    DETERMINISTIC PARALLEL_ENABLE;
+    
+    FUNCTION TIME
+    (
+        ctext IN VARCHAR2,
+        gDateTimeUTC IN DATE DEFAULT NULL
+    )
+    RETURN VARCHAR2
+    DETERMINISTIC PARALLEL_ENABLE;
+
+END;
+/

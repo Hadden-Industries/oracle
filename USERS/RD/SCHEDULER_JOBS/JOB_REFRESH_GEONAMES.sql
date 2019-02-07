@@ -1,0 +1,28 @@
+--Schedule the daily job
+BEGIN
+    
+    DBMS_SCHEDULER.Drop_Job('JOB_REFRESH_GEONAMES');
+
+END;
+/
+
+
+BEGIN
+    
+    DBMS_SCHEDULER.Create_Job
+    (
+        Job_Name=>'JOB_REFRESH_GEONAMES', --IN VARCHAR2
+        Job_Type=>'PLSQL_BLOCK', --IN VARCHAR2
+        Job_Action=>'REFRESH_GEONAMES;', --IN VARCHAR2
+        Number_Of_Arguments=>0, --IN PLS_INTEGER DEFAULT 0
+        Start_Date=>SYSTIMESTAMP AT TIME ZONE 'Europe/London', --IN TIMESTAMP WITH TIME ZONE DEFAULT NULL
+        Repeat_Interval=>'FREQ=DAILY; BYHOUR=09; BYMINUTE=00', --IN VARCHAR2 DEFAULT NULL
+        End_Date=>NULL, --IN TIMESTAMP WITH TIME ZONE DEFAULT NULL
+        Job_Class=>'DEFAULT_JOB_CLASS', --IN VARCHAR2 DEFAULT 'DEFAULT_JOB_CLASS'
+        Enabled=>TRUE, --IN BOOLEAN DEFAULT FALSE
+        Auto_Drop=>TRUE, --IN BOOLEAN DEFAULT TRUE
+        Comments=>NULL --IN VARCHAR2 DEFAULT NULL
+    );
+    
+END;
+/

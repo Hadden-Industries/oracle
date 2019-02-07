@@ -1,0 +1,50 @@
+--DROP TABLE S_USDANNDSR_FOOTNOTE PURGE;
+/*
+NUM_DATA_PTS defined as N 3, but has N 4 in the data
+*/
+CREATE
+TABLE S_USDANNDSR_FOOTNOTE
+(
+    NDB_NO VARCHAR2(5 BYTE),
+    FOOTNT_NO VARCHAR2(4 BYTE),
+    FOOTNT_TYP CHAR(1 BYTE),
+    NUTR_NO VARCHAR2(3 BYTE),
+    FOOTNT_TXT VARCHAR2(200 BYTE)
+)
+ORGANIZATION EXTERNAL
+(
+    TYPE ORACLE_LOADER
+    DEFAULT DIRECTORY RD
+    ACCESS PARAMETERS
+    (
+        RECORDS DELIMITED BY 0X'0A'
+        CHARACTERSET WE8ISO8859P1
+        NOBADFILE NOLOGFILE NODISCARDFILE
+        STRING SIZES ARE IN BYTES
+        FIELDS TERMINATED BY '^' OPTIONALLY ENCLOSED BY '~' LRTRIM
+        (
+            NDB_NO CHAR(5),
+            FOOTNT_NO CHAR(4),
+            FOOTNT_TYP CHAR(1),
+            NUTR_NO CHAR(3),
+            FOOTNT_TXT CHAR(200)
+        )
+    )
+    LOCATION('S_USDANNDSR_FOOTNOTE.txt')
+)
+NOPARALLEL
+NOMONITORING
+--REJECT LIMIT 100
+;
+
+--COMMENT ON S_USDANNDSR_FOOTNOTE.NDB_NO IS '5-digit Nutrient Databank number that uniquely identifies a food item. If this field is defined as numeric, the leading zero will be lost.';
+
+/*
+--test
+SELECT NDB_No,
+Footnt_No,
+Footnt_Typ,
+Nutr_No,
+Footnt_Txt
+FROM S_USDANNDSR_FOOTNOTE;
+*/
