@@ -20,11 +20,15 @@ CAST
     AS INTEGER
     DEFAULT NULL ON CONVERSION ERROR
 ) AS NumberArchived,
-CAST
+COALESCE
 (
-    REPLACE(NumberCrossBorder, ',')
-    AS INTEGER
-    DEFAULT NULL ON CONVERSION ERROR
+    CAST
+    (
+        REPLACE(NumberCrossBorder, ',')
+        AS INTEGER
+        DEFAULT NULL ON CONVERSION ERROR
+    ),
+    0
 ) AS NumberCrossBorder,
 CASE
     WHEN DateUpdated = 'n/a' THEN NULL
