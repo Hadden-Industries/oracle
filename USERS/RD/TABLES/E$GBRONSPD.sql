@@ -1,7 +1,6 @@
---Replaced SKIP 1 with REJECT LIMIT 1 to prevent internal error
---DROP TABLE S_GBRONSPD PURGE;
+--DROP TABLE E$GBRONSPD PURGE;
 CREATE
-TABLE S_GBRONSPD
+TABLE E$GBRONSPD
 (
     pcd VARCHAR2(7 BYTE),
     pcd2 VARCHAR2(8 BYTE),
@@ -27,7 +26,7 @@ TABLE S_GBRONSPD
     teclec VARCHAR2(9 BYTE),
     ttwa VARCHAR2(9 BYTE),
     pct VARCHAR2(9 BYTE),
-    nuts VARCHAR2(10 BYTE),
+    itl VARCHAR2(9 BYTE),
     statsward VARCHAR2(6 BYTE),
     oa01 VARCHAR2(10 BYTE),
     casward VARCHAR2(6 BYTE),
@@ -42,7 +41,7 @@ TABLE S_GBRONSPD
     wz11 VARCHAR2(9 BYTE),
     ccg VARCHAR2(9 BYTE),
     bua11 VARCHAR2(9 BYTE),
-    buasd11 VARCHAR2(9 BYTE),
+    buasd VARCHAR2(9 BYTE),
     ru11ind VARCHAR2(2 BYTE),
     oac11 VARCHAR2(9 BYTE),
     lat NUMBER(10,8),
@@ -52,7 +51,10 @@ TABLE S_GBRONSPD
     pfa VARCHAR2(9 BYTE),
     imd INTEGER,
     calncv VARCHAR2(9 BYTE),
-    stp VARCHAR2(9 BYTE)
+    stp VARCHAR2(9 BYTE),
+    oa21 VARCHAR2(9 BYTE),
+    lsoa21 VARCHAR2(9 BYTE),
+    msoa21 VARCHAR2(9 BYTE)
 )
 ORGANIZATION EXTERNAL
 (
@@ -61,6 +63,7 @@ ORGANIZATION EXTERNAL
     ACCESS PARAMETERS
     (
         RECORDS DELIMITED BY 0X'0A'
+        SKIP 1
         CHARACTERSET WE8ISO8859P1
         NOBADFILE NOLOGFILE NODISCARDFILE
         STRING SIZES ARE IN BYTES
@@ -94,7 +97,7 @@ ORGANIZATION EXTERNAL
             teclec CHAR(9),
             ttwa CHAR(9),
             pct CHAR(9),
-            nuts CHAR(10),
+            itl CHAR(9),
             statsward CHAR(6),
             oa01 CHAR(10),
             casward CHAR(6),
@@ -109,7 +112,7 @@ ORGANIZATION EXTERNAL
             wz11 CHAR(9),
             ccg CHAR(9),
             bua11 CHAR(9),
-            buasd11 CHAR(9),
+            buasd CHAR(9),
             ru11ind CHAR(2),
             oac11 CHAR(9),
             lat DECIMAL EXTERNAL(10),
@@ -119,18 +122,20 @@ ORGANIZATION EXTERNAL
             pfa CHAR(9),
             imd INTEGER EXTERNAL(255),
             calncv CHAR(9),
-            stp CHAR(9) LRTRIM
+            stp CHAR(9),
+            oa21 CHAR(9),
+            lsoa21 CHAR(9),
+            msoa21 CHAR(9) LRTRIM
         )
     )
     LOCATION('ONSPD_*.zip')
 )
 NOPARALLEL
 NOMONITORING
-REJECT LIMIT 1
 ;
 
 /*
 --test
 SELECT *
-FROM S_GBRONSPD;
+FROM E$GBRONSPD;
 */
