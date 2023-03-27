@@ -33,6 +33,13 @@ BEGIN
                 
                 vList := SUBSTR(vList, nIndex + LENGTH(gDelimiter));
                 
+                --If there is a trailing delimiter, return
+                IF vList IS NULL
+                    
+                    THEN RETURN;
+                    
+                END IF;
+                
                 rSPLIT_TYPE.Text := vList;
                 
                 rSPLIT_TYPE.Position := rSPLIT_TYPE.Position + 1;
@@ -68,7 +75,8 @@ SELECT Position,
 TRIM(Text) AS Text
 FROM TABLE(SPLIT('''11122'', ''61245'', ''62192'', ''63975'', ''63981'', ''63824'', ''63976'', ''63978'''));
 
+--test trailing delimiter
 SELECT Position,
 TRIM(Text) AS Text
-FROM TABLE(SPLIT('11122, 61245, 62192, 63975, 63981, 63824, 63976, 63978'));
+FROM TABLE(SPLIT('11122, 61245, 62192, 63975, 63981, 63824, 63976, 63978,'));
 */
