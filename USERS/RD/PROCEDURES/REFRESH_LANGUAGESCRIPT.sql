@@ -15,7 +15,7 @@ AS
     vBCC VARCHAR2(4000 BYTE) := '';
     
     --Download variables
-    vURL VARCHAR2(32767 BYTE) := 'http://unicode.org/iso15924/iso15924.txt.zip';
+    vURL VARCHAR2(32767 BYTE) := 'https://unicode.org/iso15924/iso15924.txt';
     
     --Document formatting variable
     vTimeStampFormat VARCHAR2(10 BYTE) := 'HH24:MI:SS';
@@ -271,11 +271,7 @@ BEGIN
             FROM
             (
                 SELECT ID,
-                CASE
-                    --Numeric code incorrect in downloaded file; http://www.unicode.org/iso15924/codechanges.html
-                    WHEN ID = 'Modi' THEN '324'
-                    ELSE NumericCode
-                END AS NumericCode,
+                NumericCode,
                 TRIM(Name) AS Name,
                 NameFrench,
                 PropertyValueAlias,
@@ -419,7 +415,7 @@ BEGIN
         END LOOP;
         
         
-        IF nRows > 0 THEN
+        /*IF nRows > 0 THEN
             
             vMsg := vMsg || CHR(10)
             || '<tr>'
@@ -442,7 +438,7 @@ BEGIN
             vMsg := vMsg || '<td>' || TEXT_TO_HTML(COALESCE(vGoogleOutput, vError)) || '</td>'
             || '</tr>';
             
-        END IF;
+        END IF;*/
         
         
         vMsg := vMsg || CHR(10)
