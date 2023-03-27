@@ -360,7 +360,11 @@ BEGIN
             FROM
             (
                 SELECT A.GeogCD AS ID,
-                A.Oper_Date AS DateStart,
+                CASE
+                    --when the start date is after the end date, default to the end date
+                    WHEN A.Oper_Date > A.Term_Date THEN A.Term_Date
+                    ELSE A.Oper_Date
+                END AS DateStart,
                 --Check correct length
                 CASE
                     WHEN LENGTHB(TRIM(A.ParentCD)) = 9 THEN A.ParentCD
@@ -376,6 +380,8 @@ BEGIN
                 CASE
                     --when the start and end dates are the same, assume it existed just for that day
                     WHEN A.Oper_Date = A.Term_Date THEN A.Term_Date + 1 - (1/(24*60*60))
+                    --when the start date is after the end date, assume it existed just for that day
+                    WHEN A.Oper_Date > A.Term_Date THEN A.Term_Date + 1 - (1/(24*60*60))
                     ELSE A.Term_Date
                 END AS DateEnd,
                 A.GeogNm AS Name
