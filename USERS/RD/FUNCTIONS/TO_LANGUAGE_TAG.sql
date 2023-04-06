@@ -7,6 +7,8 @@ RETURN VARCHAR2
 DETERMINISTIC PARALLEL_ENABLE
 AS
     
+    PRAGMA UDF;
+    
     lLanguage_Tag VARCHAR2(4000 BYTE);
     lLanguage_Variant_Subtags VARCHAR2(4000 BYTE);
     
