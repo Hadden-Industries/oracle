@@ -219,3 +219,146 @@ FROM TMP_LANGUAGEIDENTIFICATION
 COMMIT;
 
 DROP TABLE TMP_LANGUAGEIDENTIFICATION;
+
+INSERT
+INTO NAMESPACE
+(
+    OneNamePerItemIndicator,
+    OneItemPerNameIndicator,
+    MandatoryNamingConventionInd,
+    ShorthandPrefix,
+    SchemeReference
+)
+VALUES
+(
+    'F',
+    'T',
+    'T',
+    'IETF BCP 47 Language Tag',
+    'urn:ietf:bcp:47'
+);
+--1 row inserted.
+
+COMMIT;
+
+INSERT
+INTO SCOPEDIDENTIFIER
+(
+    ID,
+    SCOPEDID
+)
+SELECT ID,
+ID
+FROM LANGUAGEIDENTIFICATION
+WHERE (ID, ID) NOT IN
+(
+    SELECT ID,
+    ScopedID
+    FROM SCOPEDIDENTIFIER
+);
+
+--26,933 rows inserted.
+
+COMMIT;
+
+INSERT ALL
+INTO SCOPEDIDENTIFIER
+(
+    ID,
+    SCOPEDID
+)
+VALUES
+(
+    ScopedIdentifier_ID,
+    ScopedID
+)
+INTO IDENTIFIERSCOPE
+(
+    SCOPEDIDENTIFIER_ID,
+    NAMESPACE_ID
+)
+VALUES
+(
+    ScopedIdentifier_ID,
+    (SELECT ID FROM NAMESPACE WHERE ShorthandPrefix = 'IETF BCP 47 Language Tag')
+)
+INTO SCOPEDIDENTIFIERREL
+(
+    SCOPEDIDENTIFIER_ID,
+    SCOPEDIDENTIFIERRELTYPE_ID,
+    REL$SCOPEDIDENTIFIER_ID
+)
+VALUES
+(
+    LanguageIdentification_IID,
+    (SELECT ID FROM SCOPEDIDENTIFIERRELTYPE WHERE Name = 'Equivalence'),
+    ScopedIdentifier_ID
+)
+--materialize because the function gives a different UUID for each insert otherwise...
+WITH Q AS
+(
+    SELECT /*+ MATERIALIZE */
+    UNCANONICALISE_UUID(UUID_VER4) AS ScopedIdentifier_ID,
+    ID AS LanguageIdentification_IID,
+    TO_LANGUAGE_TAG(ID) AS ScopedID
+    FROM LANGUAGEIDENTIFICATION
+    WHERE
+    (
+        COMMENTS IS NOT NULL
+    )
+    OR
+    (
+        Language_ID IN
+        (
+            SELECT A.ScopedIdentifier_ID
+            FROM SCOPEDIDENTIFIERREL A
+            INNER JOIN SCOPEDIDENTIFIERRELTYPE B
+                ON A.ScopedIdentifierRelType_ID = B.ID
+            INNER JOIN SCOPEDIDENTIFIER C
+                ON A.Rel$ScopedIdentifier_ID = C.ID
+            INNER JOIN IDENTIFIERSCOPE D
+                ON C.ID = D.ScopedIdentifier_ID
+            INNER JOIN NAMESPACE E
+                ON D.Namespace_ID = E.ID
+            WHERE B.Name = 'Equivalence'
+            AND E.ShorthandPrefix = 'ISO 639-1 Code'
+            AND C.ScopedID IN
+            (
+                SELECT SUBSTRB(Comments, 1, INSTRB(Comments, '-') - 1)
+                FROM LANGUAGEIDENTIFICATION
+                WHERE Comments IS NOT NULL
+            )
+        )
+        AND LanguageScript_ID IS NULL
+        AND LanguageRegion_ID IS NULL
+    )
+)
+SELECT *
+FROM Q;
+--1074 rows inserted.
+
+COMMIT;
+
+--test
+WITH IETFBCP47LANGUAGETAGS AS
+(
+    SELECT A.ScopedIdentifier_ID,
+    C.ScopedID
+    FROM SCOPEDIDENTIFIERREL A
+    INNER JOIN SCOPEDIDENTIFIERRELTYPE B
+        ON A.ScopedIdentifierRelType_ID = B.ID
+    INNER JOIN SCOPEDIDENTIFIER C
+        ON A.Rel$ScopedIdentifier_ID = C.ID
+    INNER JOIN IDENTIFIERSCOPE D
+        ON C.ID = D.ScopedIdentifier_ID
+    INNER JOIN NAMESPACE E
+        ON D.Namespace_ID = E.ID
+    WHERE B.Name = 'Equivalence'
+    AND E.ShorthandPrefix = 'IETF BCP 47 Language Tag'
+)
+SELECT A.*,
+B.ScopedID AS Code
+FROM LANGUAGEIDENTIFICATION A
+LEFT OUTER JOIN IETFBCP47LANGUAGETAGS B
+    ON A.ID = B.ScopedIdentifier_ID
+;
