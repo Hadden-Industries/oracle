@@ -13,6 +13,28 @@ AS
     
     END;
     
+    FUNCTION format(numberToParse IN VARCHAR2)
+    RETURN VARCHAR2
+    DETERMINISTIC
+    PARALLEL_ENABLE
+    AS
+    BEGIN
+    
+        RETURN format(numberToParse, g_defaultNumberFormatString);
+    
+    END;
+    
+    FUNCTION format(numberToParse IN VARCHAR2, numberFormatString IN VARCHAR2)
+    RETURN VARCHAR2
+    DETERMINISTIC
+    PARALLEL_ENABLE
+    AS
+    BEGIN
+    
+        RETURN format(numberToParse, g_defaultRegion, numberFormatString);
+    
+    END;
+    
     FUNCTION getCountryCode(numberToParse IN VARCHAR2)
     RETURN NUMBER
     DETERMINISTIC
@@ -107,6 +129,17 @@ AS
     BEGIN
     
         RETURN isNumberGeographical(numberToParse, g_defaultRegion);
+    
+    END;
+    
+    FUNCTION isPossibleNumberWithReason(numberToParse IN VARCHAR2)
+    RETURN VARCHAR2
+    DETERMINISTIC
+    PARALLEL_ENABLE
+    AS
+    BEGIN
+    
+        RETURN isPossibleNumberWithReason(numberToParse, g_defaultRegion);
     
     END;
     

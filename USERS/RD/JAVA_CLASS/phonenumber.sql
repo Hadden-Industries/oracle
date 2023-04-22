@@ -11,7 +11,6 @@ AS
 
     public class phonenumber
     {
-        public static final String DEFAULT_REGION = "GB";
         
         public static boolean canBeInternationallyDialled(String numberToParse, String defaultRegion)
         {
@@ -28,6 +27,26 @@ AS
             catch (Exception e)
             {
                 val = false;
+            }
+    
+            return val;
+        }
+        
+        public static String format(String numberToParse, String defaultRegion, String numberFormatString)
+        {
+            String val = "";
+    
+            try
+            {
+                PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.getInstance();
+                
+                Phonenumber.PhoneNumber phoneNumber = phoneNumberUtil.parse(numberToParse, defaultRegion);
+                
+                val =  phoneNumberUtil.format(phoneNumber, PhoneNumberUtil.PhoneNumberFormat.valueOf(numberFormatString));
+            }
+            catch (Exception e)
+            {
+                val = "";
             }
     
             return val;
@@ -151,6 +170,41 @@ AS
             return val;
         }
         
+        public static String getSupportedRegions()
+        {
+            String val = "";
+            
+            PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.getInstance();
+
+            for ( String supportedRegion : phoneNumberUtil.getSupportedRegions() )
+            {
+                if ( val.length() == 0 )
+                    val = supportedRegion;
+                else
+                    val += ", " + supportedRegion;
+            }
+
+            return val;
+        }
+        
+        public static boolean isAlphaNumber(String number) 
+        {
+            boolean val = false;
+    
+            try
+            {
+                PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.getInstance();
+                
+                val = phoneNumberUtil.isAlphaNumber(number);
+            }
+            catch (Exception e)
+            {
+                val = false;
+            }
+    
+            return val;
+        }
+        
         public static boolean isNANPACountry(String regionCode)
         {
             boolean val = false;
@@ -188,7 +242,27 @@ AS
     
             return val;
         }
-
+        
+        public static PhoneNumberUtil.ValidationResult isPossibleNumberWithReason(String numberToParse, String defaultRegion)
+        {
+            PhoneNumberUtil.ValidationResult val = PhoneNumberUtil.ValidationResult.INVALID_LENGTH;
+            
+            try
+            {
+                PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.getInstance();
+                
+                Phonenumber.PhoneNumber phoneNumber = phoneNumberUtil.parse(numberToParse, defaultRegion);
+                
+                val =  phoneNumberUtil.isPossibleNumberWithReason(phoneNumber);
+            }
+            catch (Exception e)
+            {
+                val = PhoneNumberUtil.ValidationResult.INVALID_LENGTH;
+            }
+    
+            return val;
+        }
+        
         public static boolean isValidNumber(String numberToParse, String defaultRegion)
         {
             boolean val = false;
