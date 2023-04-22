@@ -11,6 +11,11 @@ AS
     lArray tArray:= tArray
     (
         '',
+        /*SELECT ' ' || InitCap(NameScaleShort) || ' '
+        FROM SIPREFIX
+        WHERE Multiplier >= 1000
+        AND REMAINDER(Multiplier, 1000) = 0
+        ORDER BY Multiplier*/
         ' Thousand ',
         ' Million ',
         ' Billion ',
@@ -35,7 +40,7 @@ BEGIN
         
         EXIT WHEN vNumber IS NULL;
         
-        IF (SUBSTRB(vNumber, LENGTHB(vNumber) - 2, 3) <> 0) THEN
+        IF (SUBSTRB(vNumber, LENGTHB(vNumber) - 2, 3) != 0) THEN
             
             vReturn := TO_CHAR
             (
