@@ -15,7 +15,7 @@ AS
     nRetrySeconds PLS_INTEGER := 10;
     req UTL_HTTP.REQ;
     resp UTL_HTTP.RESP;
-    rResp RAW(1000);
+    rResp RAW(4000);
     p_WalletPath ORACLEDATABASEWALLET.Path%TYPE := '';
     p_WalletPassword ORACLEDATABASEWALLET.Password%TYPE := '';
     
@@ -175,7 +175,7 @@ BEGIN
                 
                 LOOP
                     
-                    UTL_HTTP.Read_Raw(resp, rResp, 1000);
+                    UTL_HTTP.Read_Raw(resp, rResp, 4000);
                     
                     DBMS_LOB.WriteAppend(bData, UTL_RAW.Length(rResp), TO_BLOB(rResp));
                     
