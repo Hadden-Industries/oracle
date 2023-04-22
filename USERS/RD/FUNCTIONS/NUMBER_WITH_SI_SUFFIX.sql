@@ -25,7 +25,8 @@ BEGIN
         
     END IF;
     
-    IF nNumber BETWEEN 1000 AND 1000000000000000000000000 THEN
+    --(SELECT MAX(Multiplier) FROM SIPREFIX)
+    IF nNumber BETWEEN 1000 AND 1000000000000000000000000000000 THEN
         
         SELECT nNumber/Multiplier || ' ' || ID
         INTO vNumber
