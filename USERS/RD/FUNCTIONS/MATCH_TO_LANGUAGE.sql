@@ -1,49 +1,57 @@
 CREATE OR REPLACE
-FUNCTION MATCH_TO_LANGUAGE(gText IN VARCHAR2)
+FUNCTION MATCH_TO_LANGUAGE(g_LanguageCode IN VARCHAR2)
 RETURN LANGUAGE.ID%TYPE
 PARALLEL_ENABLE
 DETERMINISTIC
 AS
-    
+
     PRAGMA UDF;
-    
-    vLanguage_ID LANGUAGE.ID%TYPE := NULL;
-    
+
+    l_Language_ID LANGUAGE.ID%TYPE := NULL;
+
 BEGIN
-    
-    SELECT COALESCE
-    (
+
+    BEGIN
+
+        SELECT Language_ID
+        INTO l_Language_ID
+        FROM
         (
-            SELECT ID
-            FROM LANGUAGE
-            WHERE Part1 = gText
-        ),
-        --http://en.wikipedia.org/wiki/ISO_639-2#B_and_T_codes
-        (
-            SELECT ID
-            FROM LANGUAGE
-            WHERE Part2T = gText
-        ),
-        (
-            SELECT ID
-            FROM LANGUAGE
-            WHERE Part2B = gText
-        ),
-        (
-            SELECT ID
-            FROM LANGUAGE
-            WHERE ID = gText
-        ),
-        (
-            SELECT ID
-            FROM LANGUAGE
-            WHERE Name = 'Undetermined'
+            SELECT D.ScopedIdentifier_ID AS Language_ID,
+            ROW_NUMBER() OVER (ORDER BY A.ShorthandPrefix) AS RowNumber
+            FROM NAMESPACE A
+            INNER JOIN IDENTIFIERSCOPE B
+                ON A.ID = B.Namespace_ID
+            INNER JOIN SCOPEDIDENTIFIER C
+                ON B.ScopedIdentifier_ID = C.ID
+            INNER JOIN SCOPEDIDENTIFIERREL D
+                ON C.ID = D.Rel$ScopedIdentifier_ID
+            INNER JOIN SCOPEDIDENTIFIERRELTYPE E
+                ON D.ScopedIdentifierRelType_ID = E.ID
+            WHERE A.ShorthandPrefix IN
+            (
+                'ISO 639-1 Code',
+                'ISO 639-2 Bibliographic Applications Code',
+                'ISO 639-2 Terminology Applications Code',
+                'ISO 639-3 Code',
+                'ISO 639-6 Code'
+            )
+            AND C.ScopedID = g_LanguageCode
+            AND E.Name = 'Equivalence'
         )
-    ) AS Language_ID
-    INTO vLanguage_ID
-    FROM DUAL;
-    
-    RETURN vLanguage_ID;
+        WHERE RowNumber = 1;
+
+    EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+
+        SELECT ID
+        INTO l_Language_ID
+        FROM LANGUAGE
+        WHERE Name = 'Undetermined';
+
+    END;
+
+    RETURN l_Language_ID;
     
 END;
 /
