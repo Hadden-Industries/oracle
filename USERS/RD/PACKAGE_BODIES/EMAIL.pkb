@@ -3,9 +3,9 @@ PACKAGE BODY EMAIL
 AS
     
     --Global package variables
-    gMailHost CHAR(14 BYTE) := 'smtp.gmail.com';
-    gMailPort PLS_INTEGER := 465;
-    gWalletPath ORACLEDATABASEWALLET.Path%TYPE := '';
+    gMailHost       CONSTANT CHAR(14 BYTE)             := 'smtp.gmail.com';
+    gMailPort       CONSTANT PLS_INTEGER               := 465;
+    gWalletPath     ORACLEDATABASEWALLET.Path%TYPE     := '';
     gWalletPassword ORACLEDATABASEWALLET.Password%TYPE := '';
     
     PROCEDURE SEND
@@ -20,67 +20,57 @@ AS
         ContentType IN VARCHAR2 DEFAULT 'text/html'
     ) AS
         
-        PRAGMA AUTONOMOUS_TRANSACTION;
-        
         --Error variable
-        vError VARCHAR2(255 BYTE) := NULL;
+        vError               VARCHAR2(255 BYTE) := NULL;
         
         --Program variables
-        vSenderDomain VARCHAR2(4000 BYTE) := '';
-        vTableSpace_Status VARCHAR2(30 BYTE) := '';
-        xConnection UTL_SMTP.CONNECTION;
+        xConnection          UTL_SMTP.CONNECTION;
         
-        nOffset SIMPLE_INTEGER := 1;
-        nBodyLength SIMPLE_INTEGER := 0;
-        nAttachmentLength SIMPLE_INTEGER := 0;
+        nOffset              SIMPLE_INTEGER := 1;
+        nBodyLength          SIMPLE_INTEGER := 0;
+        nAttachmentLength    SIMPLE_INTEGER := 0;
+        
+        l_username           VARCHAR2(255 CHAR) := '';
+        l_password           VARCHAR2(255 CHAR) := '';
         
         --Boundary variables
-        vBoundaryEmail CONSTANT CHAR(36) := LPAD
-        (
-            TRUNC
-            (
-                DBMS_RANDOM.Value('100000000000000000000', '999999999999999999999')
-            ),
-            36,
-            '-'
-        );
-        vBoundaryContent CONSTANT CHAR(40) := '--' || vBoundaryEmail || UTL_TCP.CRLF;
-        vBoundaryTermination CONSTANT CHAR(42) := '--' || vBoundaryEmail || '--' || UTL_TCP.CRLF;
+        vBoundaryEmail       CHAR(36 BYTE) := '';
+        vBoundaryContent     CHAR(40 BYTE) := '';
+        vBoundaryTermination CHAR(42 BYTE) := '';
         
     BEGIN
         
-        --Check the status of the tablespace that holds the logging table
-        SELECT USER_TABLESPACES.Status AS TableSpace_Status
-        INTO vTableSpace_Status
-        FROM ALL_TABLES
-        INNER JOIN USER_TABLESPACES
-            ON ALL_TABLES.TableSpace_Name = USER_TABLESPACES.TableSpace_Name
-        WHERE ALL_TABLES.Owner = 'RD'
-        AND ALL_TABLES.Table_Name = 'EMAILLOG';
-        
-        --Only attempt the insert if the tablespace is online
-        IF vTableSpace_Status = 'ONLINE' THEN
-            
-            INSERT
-            INTO RD.EMAILLOG
+        SELECT Username,
+        Password
+        INTO l_username,
+        l_password
+        FROM
+        (
+            SELECT /*+OPT_ESTIMATE(TABLE A ROWS=1)*/
+            C.Key,
+            C.Value
+            FROM PARSEEMAILADDRESS(Sender) A
+            INNER JOIN EMAILADDRESS B
+                ON A.RootZoneDataBase_ID = B.RootZoneDataBase_ID
+                    AND A.LocalPart = B.LocalPart
+                    AND A.Subdomains = B.Subdomains
+            INNER JOIN PRODUCTORSERVICEINDIVCREDENTIAL AS OF PERIOD FOR VALID_TIME SYS_EXTRACT_UTC(SYSTIMESTAMP) C
+                ON B.ProductOrServiceIndiv_ID = C.ProductOrServiceIndiv_ID
+        )
+        PIVOT 
+        (
+            MIN(Value)
+            FOR Key IN
             (
-                DATETIMEX,
-                FROM_,
-                SUBJECT,
-                TO_,
-                BODY
+                'Username' AS USERNAME,
+                'Password' AS PASSWORD
             )
-            VALUES
-            (
-                SYSDATE,
-                Sender,
-                Subject,
-                Recipient,
-                Msg
-            );
-            
-            COMMIT;
-            
+        );
+        
+        IF (l_username IS NULL OR l_password IS NULL) THEN
+        
+            RAISE NO_DATA_FOUND;
+        
         END IF;
         
         xConnection := UTL_SMTP.Open_Connection
@@ -95,49 +85,13 @@ AS
         
         UTL_SMTP.Ehlo(xConnection, gMailHost);
         
-        SELECT CASE
-            --if there are multiple levels to the domain, get the last one only
-            WHEN INSTR(SubDomains, '.') > 0 THEN SUBSTR
-            (
-                SubDomains,
-                INSTR(SubDomains, '.', -1, 1) + 1
-            )
-            ELSE SubDomains
-        END  || '.' || LOWER(RootZoneDatabase_ID)
-        INTO vSenderDomain
-        FROM TABLE
+        UTL_SMTP.Auth
         (
-            PARSEEMAILADDRESS(Sender)
-        )
-        WHERE RootZoneDatabase_ID IS NOT NULL
-        AND LocalPart IS NOT NULL
-        AND SubDomains IS NOT NULL;
-        
-        IF (vSenderDomain = 'haddenindustries.com') THEN
-            
-            UTL_SMTP.Auth
-            (
-                c => xConnection,
-                username => 'maksym.shostak@haddenindustries.com',
-                password => 'xjufbxwrfhrpzopn',
-                schemes  => UTL_SMTP.All_Schemes
-            );
-            
-        ELSIF (vSenderDomain = 'jym.fit') THEN
-            
-            UTL_SMTP.Auth
-            (
-                c => xConnection,
-                username => 'info@jym.fit',
-                password => 'rjjblkwbfitwqdgx',
-                schemes  => UTL_SMTP.All_Schemes
-            );
-            
-        ELSE
-            
-            RAISE NO_DATA_FOUND;
-            
-        END IF;
+            c        => xConnection,
+            username => l_username,
+            password => l_password,
+            schemes  => UTL_SMTP.All_Schemes
+        );
         
         UTL_SMTP.Mail(xConnection, sender);
         
@@ -147,7 +101,7 @@ AS
             SELECT Text AS EmailAddress
             FROM TABLE
             (
-                RD.SPLIT(Recipient, ';')
+                SPLIT(Recipient, ';')
             )
             WHERE INSTRB(Text, '@') > 0
         ) LOOP
@@ -162,7 +116,7 @@ AS
             SELECT Text AS EmailAddress
             FROM TABLE
             (
-                RD.SPLIT(CC, ';')
+                SPLIT(CC, ';')
             )
             WHERE INSTRB(Text, '@') > 0
         ) LOOP
@@ -177,7 +131,7 @@ AS
             SELECT Text AS EmailAddress
             FROM TABLE
             (
-                RD.SPLIT(BCC, ';')
+                SPLIT(BCC, ';')
             )
             WHERE INSTRB(Text, '@') > 0
         ) LOOP
@@ -212,6 +166,10 @@ AS
         UTL_SMTP.Write_Data(xConnection, 'Subject: ' || Subject || UTL_TCP.CRLF);
         
         IF Attachments IS NOT NULL THEN
+            
+            vBoundaryEmail       := UUID_VER4;
+            vBoundaryContent     := '--' || vBoundaryEmail || UTL_TCP.CRLF;
+            vBoundaryTermination := '--' || vBoundaryEmail || '--' || UTL_TCP.CRLF;
             
             UTL_SMTP.Write_Data(xConnection, 'Content-Type: multipart/mixed;' || UTL_TCP.CRLF);
             
@@ -388,57 +346,3 @@ BEGIN
     
 END;
 /
-
-/*
---test
-SET SERVEROUTPUT ON;
-SET TIMING ON;
-
-BEGIN
-    
-    RD.EMAIL.SEND
-    (
-        SENDER=>'maksym.shostak@haddenindustries.com',
-        RECIPIENT=>'maksym@shostak.info',
-        CC=>NULL,
-        BCC=>NULL,
-        SUBJECT=>'Test from Oracle',
-        MSG=>'If this works, THEN you can send email via smtp.gmail.com!',
-        ATTACHMENTS=>NULL
-    );
-    
-END;
-/
-
-BEGIN
-    
-    RD.EMAIL.SEND
-    (
-        SENDER=>'info@jym.fit',
-        RECIPIENT=>'maksym@shostak.info',
-        CC=>NULL,
-        BCC=>NULL,
-        SUBJECT=>'Test from Oracle',
-        MSG=>'If this works, THEN you can send email via smtp.gmail.com!',
-        ATTACHMENTS=>NULL
-    );
-    
-END;
-/
-
-BEGIN
-    
-    RD.EMAIL.SEND
-    (
-        SENDER=>'info@maliciousdomain.net',
-        RECIPIENT=>'maksym@shostak.info',
-        CC=>NULL,
-        BCC=>NULL,
-        SUBJECT=>'Test from Oracle',
-        MSG=>'If this works, THEN you can send email via smtp.gmail.com!',
-        ATTACHMENTS=>NULL
-    );
-    
-END;
-/
-*/
