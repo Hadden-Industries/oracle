@@ -47,16 +47,15 @@ AS
         FROM
         (
             SELECT /*+OPT_ESTIMATE(TABLE A ROWS=1)*/
-            D.Key,
-            D.Value
-            FROM PARSEEMAILADDRESS(Sender) A
-            INNER JOIN DNSDOMAIN AS OF PERIOD FOR TRANSACTION_TIME SYS_EXTRACT_UTC(SYSTIMESTAMP) B
-                ON A.Domain || '.' = B.FQDN
-            INNER JOIN EMAILADDRESS AS OF PERIOD FOR TRANSACTION_TIME SYS_EXTRACT_UTC(SYSTIMESTAMP) C
-                ON A.LocalPart = C.LocalPart
-                    AND B.ProductOrServiceIndiv_ID = C.DNSDomain_ProductOrServiceIndiv_ID
-            INNER JOIN PRODUCTORSERVICEINDIVCREDENTIAL AS OF PERIOD FOR VALID_TIME SYS_EXTRACT_UTC(SYSTIMESTAMP) D
-                ON C.ProductOrServiceIndiv_ID = D.ProductOrServiceIndiv_ID
+            C.Key,
+            C.Value
+            FROM DNSDOMAIN AS OF PERIOD FOR TRANSACTION_TIME SYS_EXTRACT_UTC(SYSTIMESTAMP) A
+            INNER JOIN EMAILADDRESS AS OF PERIOD FOR TRANSACTION_TIME SYS_EXTRACT_UTC(SYSTIMESTAMP) B
+                ON A.ProductOrServiceIndiv_ID = B.DNSDomain_ProductOrServiceIndiv_ID
+            INNER JOIN PRODUCTORSERVICEINDIVCREDENTIAL AS OF PERIOD FOR VALID_TIME SYS_EXTRACT_UTC(SYSTIMESTAMP) C
+                ON B.ProductOrServiceIndiv_ID = C.ProductOrServiceIndiv_ID
+            WHERE A.FQDN = LIBEMAILADDRESS.getDomain(Sender) || '.'
+            AND B.LocalPart = LIBEMAILADDRESS.getLocalPart(Sender)
         )
         PIVOT 
         (
