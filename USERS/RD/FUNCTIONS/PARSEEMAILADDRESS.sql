@@ -6,50 +6,43 @@ AS
     
     PRAGMA UDF;
     
-    --Disregard trailing
-    vEmailAddress VARCHAR2(256 BYTE) := RTRIM
-    (
-        TRIM
+    vEmailAddress VARCHAR2(256 BYTE) :=
+    --Remove display-name if it exists
+    CASE
+        WHEN INSTR(gEmail, '<') > 0 THEN SUBSTR
         (
-            --Remove display-name if it exists
-            CASE
-                WHEN INSTR(gEmail, '<') > 0 THEN SUBSTR
-                (
-                    gEmail,
-                    INSTR(gEmail, '<') + 1,
-                    --last instance of closing brace
-                    INSTR(gEmail, '>', -1) - INSTR(gEmail, '<') - 1
-                )
-                ELSE gEmail
-            END
-        ),
-        --period
-        '.'
-    );
-    rEmailAddress T_EMAILADDRESS := T_EMAILADDRESS(NULL, NULL, NULL);
+            gEmail,
+            INSTR(gEmail, '<') + 1,
+            --last instance of closing brace
+            INSTR(gEmail, '>', -1) - INSTR(gEmail, '<') - 1
+        )
+        ELSE gEmail
+    END;
+    
+    rEmailAddress T_EMAILADDRESS := T_EMAILADDRESS(NULL, NULL);
     
 BEGIN
+
+    --remove trailing period
+    vEmailAddress := RTRIM
+    (
+        --trim whitespace
+        TRIM(vEmailAddress),
+        '.'
+    );
     
-    BEGIN
+    --if the quoted email address turns out to be empty
+    IF vEmailAddress IS NULL THEN
         
-        SELECT ID AS RootZoneDatabase_ID
-        INTO rEmailAddress.RootZoneDatabase_ID
-        FROM ROOTZONEDATABASE
-        WHERE ID = UPPER
+        --remove trailing period
+        vEmailAddress := RTRIM
         (
-            SUBSTRB
-            (
-                vEmailAddress,
-                INSTRB(vEmailAddress, '.', -1, 1) + 1
-            )
+            --trim whitespace from the given value
+            TRIM(gEmail),
+            '.'
         );
         
-    EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        
-        rEmailAddress.RootZoneDatabase_ID := '';
-        
-    END;
+    END IF;
     
     rEmailAddress.LocalPart := LOWER
     (
@@ -61,13 +54,12 @@ BEGIN
         )
     );
     
-    rEmailAddress.SubDomains := LOWER
+    rEmailAddress.Domain := LOWER
     (
         SUBSTRB
         (
             vEmailAddress,
-            INSTRB(vEmailAddress, '@', -1, 1) + 1,
-            INSTRB(vEmailAddress, '.', -1, 1) - INSTRB(vEmailAddress, '@', -1, 1) - 1
+            INSTRB(vEmailAddress, '@', -1, 1) + 1
         )
     );
     
@@ -78,20 +70,37 @@ END;
 
 /*
 --test
-SELECT A.Email AS "Email Address",
-B.RootZoneDatabase_ID,
-B.LocalPart,
-B.SubDomains
+SELECT A.EmailAddress AS "Email Address",
+B.LocalPart AS "local-part",
+B.Domain AS "domain",
+A.Comments
 FROM
 (
-    SELECT 'maksym.shostak@haddenindustries.com' AS Email FROM DUAL UNION ALL
-    SELECT '"Jym" <info@jym.fit>' AS Email FROM DUAL UNION ALL
-    SELECT 'local@part@hmrc.gov.uk.' AS Email FROM DUAL UNION ALL
-    SELECT '"Jam" <local@part@hmrc.gov.uk.>' AS Email FROM DUAL UNION ALL
-    SELECT '"Abc@def"@example.com' AS Email FROM DUAL
+    SELECT 'simple@example.com' AS EmailAddress, '' AS Comments FROM DUAL UNION ALL
+    SELECT 'very.common@example.com' AS EmailAddress, '' AS Comments FROM DUAL UNION ALL
+    SELECT 'disposable.style.email.with+symbol@example.com' AS EmailAddress, '' AS Comments FROM DUAL UNION ALL
+    SELECT 'other.email-with-hyphen@example.com' AS EmailAddress, '' AS Comments FROM DUAL UNION ALL
+    SELECT 'fully-qualified-domain@example.com' AS EmailAddress, '' AS Comments FROM DUAL UNION ALL
+    SELECT 'user.name+tag+sorting@example.com' AS EmailAddress, 'may go to user.name@example.com inbox depending on mail server' AS Comments FROM DUAL UNION ALL
+    SELECT 'x@example.com' AS EmailAddress, 'one-letter local-part' AS Comments FROM DUAL UNION ALL
+    SELECT 'example-indeed@strange-example.com' AS EmailAddress, '' AS Comments FROM DUAL UNION ALL
+    SELECT 'test/test@test.com' AS EmailAddress, 'slashes are a printable character, and allowed' AS Comments FROM DUAL UNION ALL
+    SELECT 'admin@mailserver1' AS EmailAddress, 'local domain name with no TLD, although ICANN highly discourages dotless email addresses[12]' AS Comments FROM DUAL UNION ALL
+    SELECT 'example@s.example' AS EmailAddress, 'see the List of Internet top-level domains' AS Comments FROM DUAL UNION ALL
+    SELECT '" "@example.org' AS EmailAddress, 'space between the quotes' AS Comments FROM DUAL UNION ALL
+    SELECT '"john..doe"@example.org' AS EmailAddress, 'quoted double dot' AS Comments FROM DUAL UNION ALL
+    SELECT 'mailhost!username@example.org' AS EmailAddress, 'bangified host route used for uucp mailers' AS Comments FROM DUAL UNION ALL
+    SELECT '"very.(),:;<>[]\".VERY.\"very@\\ \"very\".unusual"@strange.example.com' AS EmailAddress, 'include non-letters character AND multiple at sign, the first one being double quoted' AS Comments FROM DUAL UNION ALL
+    SELECT 'user%example.com@example.org' AS EmailAddress, '% escaped mail route to user@example.com via example.org' AS Comments FROM DUAL UNION ALL
+    SELECT 'user-@example.org' AS EmailAddress, 'local part ending with non-alphanumeric character from the list of allowed printable characters' AS Comments FROM DUAL UNION ALL
+    SELECT 'postmaster@[123.123.123.123]' AS EmailAddress, 'IP addresses are allowed instead of domains when in square brackets, but strongly discouraged' AS Comments FROM DUAL UNION ALL
+    SELECT 'postmaster@[IPv6:2001:0db8:85a3:0000:0000:8a2e:0370:7334]' AS EmailAddress, 'IPv6 uses a different syntax' AS Comments FROM DUAL UNION ALL
+    SELECT 'John Smith <john.smith@example.org>' AS EmailAddress, '' AS Comments FROM DUAL UNION ALL
+    SELECT 'john@example.com (John Smith)' AS EmailAddress, 'with comments' AS Comments FROM DUAL UNION ALL
+    SELECT 'Pete(A wonderful \) chap) <pete(his account)@silly.test(his host)>', 'from RFC2822 (from chapter: A.5. White space, comments, and other oddities' AS Comments FROM DUAL
 ) A
 CROSS JOIN TABLE
 (
-    PARSEEMAILADDRESS(A.Email)
+    PARSEEMAILADDRESS(A.EmailAddress)
 ) B;
 */

@@ -47,15 +47,16 @@ AS
         FROM
         (
             SELECT /*+OPT_ESTIMATE(TABLE A ROWS=1)*/
-            C.Key,
-            C.Value
+            D.Key,
+            D.Value
             FROM PARSEEMAILADDRESS(Sender) A
-            INNER JOIN EMAILADDRESS B
-                ON A.RootZoneDataBase_ID = B.RootZoneDataBase_ID
-                    AND A.LocalPart = B.LocalPart
-                    AND A.Subdomains = B.Subdomains
-            INNER JOIN PRODUCTORSERVICEINDIVCREDENTIAL AS OF PERIOD FOR VALID_TIME SYS_EXTRACT_UTC(SYSTIMESTAMP) C
-                ON B.ProductOrServiceIndiv_ID = C.ProductOrServiceIndiv_ID
+            INNER JOIN DNSDOMAIN AS OF PERIOD FOR TRANSACTION_TIME SYS_EXTRACT_UTC(SYSTIMESTAMP) B
+                ON A.Domain || '.' = B.FQDN
+            INNER JOIN EMAILADDRESS AS OF PERIOD FOR TRANSACTION_TIME SYS_EXTRACT_UTC(SYSTIMESTAMP) C
+                ON A.LocalPart = C.LocalPart
+                    AND B.ProductOrServiceIndiv_ID = C.DNSDomain_ProductOrServiceIndiv_ID
+            INNER JOIN PRODUCTORSERVICEINDIVCREDENTIAL AS OF PERIOD FOR VALID_TIME SYS_EXTRACT_UTC(SYSTIMESTAMP) D
+                ON C.ProductOrServiceIndiv_ID = D.ProductOrServiceIndiv_ID
         )
         PIVOT 
         (

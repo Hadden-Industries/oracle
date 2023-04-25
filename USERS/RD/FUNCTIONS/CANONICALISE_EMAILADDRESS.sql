@@ -8,15 +8,14 @@ AS
     
 BEGIN
     
-    IF (gEmailAddress.RootZoneDataBase_ID IS NULL
-        OR gEmailAddress.LocalPart IS NULL
-        OR gEmailAddress.Subdomains IS NULL) THEN
+    IF (gEmailAddress.LocalPart IS NULL
+        OR gEmailAddress.Domain IS NULL) THEN
         
         RETURN NULL;
         
     END IF;
     
-    RETURN gEmailAddress.LocalPart || '@' || gEmailAddress.Subdomains || '.' || LOWER(gEmailAddress.RootZoneDataBase_ID);
+    RETURN gEmailAddress.LocalPart || '@' || RTRIM(gEmailAddress.Domain, '.');
     
 END ;
 /
@@ -26,13 +25,14 @@ END ;
 SELECT CANONICALISE_EMAILADDRESS(NULL)
 FROM DUAL;
 
-SELECT UUID,
-RootZoneDataBase_ID,
-LocalPart,
-Subdomains,
+SELECT A.ProductOrServiceIndiv_ID,
+A.LocalPart,
+B.FQDN,
 CANONICALISE_EMAILADDRESS
 (
-    T_EMAILADDRESS(RootZoneDataBase_ID, LocalPart, Subdomains)
-) AS Email
-FROM EMAILADDRESS;
+    T_EMAILADDRESS(A.LocalPart, B.FQDN)
+) AS EmailAddress
+FROM EMAILADDRESS A
+INNER JOIN DNSDOMAIN B
+    ON A.DNSDomain_ProductOrServiceIndiv_ID = B.ProductOrServiceIndiv_ID;
 */
