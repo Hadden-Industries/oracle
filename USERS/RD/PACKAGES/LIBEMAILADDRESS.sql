@@ -2,10 +2,8 @@ SELECT A.EmailAddress AS "Email Address",
 LIBEMAILADDRESS.isValid(A.EmailAddress) AS IsValid,
 LIBEMAILADDRESS.isValidStrict(A.EmailAddress) AS IsValidStrict,
 LIBEMAILADDRESS.getInternetAddressGetAddress(A.EmailAddress) AS GetInternetAddressGetAddress,
-LIBEMAILADDRESS.getLocalPart(A.EmailAddress) AS GetLocalPart,
-LIBEMAILADDRESS.getDomain(A.EmailAddress) AS GetDomain,
-B.LocalPart AS "local-part",
-B.Domain AS "domain",
+LIBEMAILADDRESS.getLocalPart(A.EmailAddress) AS "local-part",
+LIBEMAILADDRESS.getDomain(A.EmailAddress) AS "domain",
 A.Comments
 FROM
 (
@@ -31,8 +29,4 @@ FROM
     SELECT 'John Smith <john.smith@example.org>' AS EmailAddress, '' AS Comments FROM DUAL UNION ALL
     SELECT 'john@example.com (John Smith)' AS EmailAddress, 'with comments' AS Comments FROM DUAL UNION ALL
     SELECT 'Pete(A wonderful \) chap) <pete(his account)@silly.test(his host)>', 'from RFC2822 (from chapter: A.5. White space, comments, and other oddities' AS Comments FROM DUAL
-) A
-CROSS JOIN TABLE
-(
-    PARSEEMAILADDRESS(A.EmailAddress)
-) B;
+) A;
