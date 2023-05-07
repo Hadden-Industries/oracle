@@ -10,14 +10,14 @@ AS
     
     PROCEDURE SEND
     (
-        Sender IN VARCHAR2,
-        Recipient IN VARCHAR2,
-        CC IN VARCHAR2 DEFAULT '',
-        BCC IN VARCHAR2 DEFAULT '',
-        Subject IN VARCHAR2 DEFAULT '',
-        Msg IN CLOB DEFAULT NULL,
+        From_       IN VARCHAR2            DEFAULT 'maksym.shostak@haddenindustries.com',
+        To_         IN VARCHAR2            DEFAULT 'maksym.shostak@haddenindustries.com',
+        CC          IN VARCHAR2            DEFAULT '',
+        BCC         IN VARCHAR2            DEFAULT '',
+        Subject     IN VARCHAR2            DEFAULT '',
+        Body        IN CLOB                DEFAULT NULL,
         Attachments IN T_EMAIL_ATTACHMENTS DEFAULT NULL,
-        ContentType IN VARCHAR2 DEFAULT 'text/html'
+        ContentType IN VARCHAR2            DEFAULT 'text/html'
     ) AS
         
         --Error variable
@@ -54,8 +54,8 @@ AS
                 ON A.ProductOrServiceIndiv_ID = B.DNSDomain_ProductOrServiceIndiv_ID
             INNER JOIN PRODUCTORSERVICEINDIVCREDENTIAL AS OF PERIOD FOR VALID_TIME SYS_EXTRACT_UTC(SYSTIMESTAMP) C
                 ON B.ProductOrServiceIndiv_ID = C.ProductOrServiceIndiv_ID
-            WHERE A.FQDN = LIBEMAILADDRESS.getDomain(Sender) || '.'
-            AND B.LocalPart = LIBEMAILADDRESS.getLocalPart(Sender)
+            WHERE A.FQDN = LIBEMAILADDRESS.getDomain(From_) || '.'
+            AND B.LocalPart = LIBEMAILADDRESS.getLocalPart(From_)
         )
         PIVOT 
         (
@@ -93,7 +93,7 @@ AS
             schemes  => UTL_SMTP.All_Schemes
         );
         
-        UTL_SMTP.Mail(xConnection, sender);
+        UTL_SMTP.Mail(xConnection, From_);
         
         --TO
         FOR C IN
@@ -101,7 +101,7 @@ AS
             SELECT Text AS EmailAddress
             FROM TABLE
             (
-                SPLIT(Recipient, ';')
+                SPLIT(To_, ';')
             )
             WHERE INSTRB(Text, '@') > 0
         ) LOOP
@@ -143,21 +143,21 @@ AS
         UTL_SMTP.Open_Data(xConnection);
         
         --Write header details
-        UTL_SMTP.Write_Data(xConnection, 'From: ' || Sender || UTL_TCP.CRLF);
+        UTL_SMTP.Write_Data(xConnection, 'From: ' || From_ || UTL_TCP.CRLF);
         
-        IF recipient IS NOT NULL THEN
+        IF To_ IS NOT NULL THEN
             
-            UTL_SMTP.Write_Data(xConnection, 'To: ' || Recipient || UTL_TCP.CRLF);
+            UTL_SMTP.Write_Data(xConnection, 'To: ' || To_ || UTL_TCP.CRLF);
             
         END IF;
         
-        IF cc IS NOT NULL THEN
+        IF CC IS NOT NULL THEN
             
             UTL_SMTP.Write_Data(xConnection, 'CC: ' || CC || UTL_TCP.CRLF);
             
         END IF;
         
-        IF bcc IS NOT NULL THEN
+        IF BCC IS NOT NULL THEN
             
             UTL_SMTP.Write_Data(xConnection, 'BCC: ' || BCC || UTL_TCP.CRLF);
             
@@ -182,14 +182,14 @@ AS
         END IF;
         
         --Body of message
-        IF Msg IS NOT NULL THEN
+        IF Body IS NOT NULL THEN
             
             UTL_SMTP.Write_Data(xConnection, 'Content-Type: ' || ContentType || '; charset=utf-8; format=flowed' || UTL_TCP.CRLF);
             
             UTL_SMTP.Write_Data(xConnection, 'Content-Transfer-Encoding: 7bit' || UTL_TCP.CRLF || UTL_TCP.CRLF);
             
             --Send email body
-            nBodyLength := DBMS_LOB.GetLength(lob_loc => Msg);
+            nBodyLength := DBMS_LOB.GetLength(lob_loc => Body);
             
             IF nBodyLength > 0 THEN
                 
@@ -202,7 +202,7 @@ AS
                             xConnection,
                             UTL_RAW.Cast_To_Raw
                             (
-                                DBMS_LOB.Substr(Msg, 4095, nOffset)
+                                DBMS_LOB.Substr(Body, 4095, nOffset)
                             )
                         );
                         
@@ -215,7 +215,7 @@ AS
                             xConnection,
                             UTL_RAW.Cast_To_Raw
                             (
-                                DBMS_LOB.Substr(Msg, nBodyLength - nOffset + 1, nOffset)
+                                DBMS_LOB.Substr(Body, nBodyLength - nOffset + 1, nOffset)
                             )
                         );
                         

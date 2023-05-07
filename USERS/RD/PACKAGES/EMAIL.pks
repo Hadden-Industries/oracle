@@ -13,14 +13,14 @@ AS
     
     PROCEDURE SEND
     (
-        Sender IN VARCHAR2,
-        Recipient IN VARCHAR2,
-        CC IN VARCHAR2 DEFAULT '',
-        BCC IN VARCHAR2 DEFAULT '',
-        Subject IN VARCHAR2 DEFAULT '',
-        Msg IN CLOB DEFAULT NULL,
+        From_       IN VARCHAR2            DEFAULT 'maksym.shostak@haddenindustries.com',
+        To_         IN VARCHAR2            DEFAULT 'maksym.shostak@haddenindustries.com',
+        CC          IN VARCHAR2            DEFAULT '',
+        BCC         IN VARCHAR2            DEFAULT '',
+        Subject     IN VARCHAR2            DEFAULT '',
+        Body        IN CLOB                DEFAULT NULL,
         Attachments IN T_EMAIL_ATTACHMENTS DEFAULT NULL,
-        ContentType IN VARCHAR2 DEFAULT 'text/html'
+        ContentType IN VARCHAR2            DEFAULT 'text/html'
     );
     
 END;
