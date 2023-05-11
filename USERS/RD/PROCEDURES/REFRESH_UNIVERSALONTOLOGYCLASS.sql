@@ -56,6 +56,8 @@ BEGIN
             SELECT 'https://haddenindustries.com/ontology/universal/core/latest' AS URL FROM DUAL
             UNION ALL
             SELECT 'https://haddenindustries.com/ontology/universal/extended/latest' AS URL FROM DUAL
+            /*UNION ALL
+            SELECT 'https://haddenindustries.com/ontology/iso-iec/11179/-3/ed-3/v1' AS URL FROM DUAL*/
         ) LOOP
         
             l_Email_Body := l_Email_Body || CHR(10)
@@ -107,9 +109,33 @@ BEGIN
                                 ELSE DESCRIPTIONS.Lang
                             END
                         ) DescriptionLanguageRank,
-                        A.Label,
+                        COALESCE
+                        (
+                            A.Label,
+                            SUBSTR
+                            (
+                                A.About,
+                                INSTR(A.About, '/', -1) + 1
+                            )   
+                        ) AS Label,
                         TO_DATE(A.Modified, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS Modified,
-                        TITLES.Val AS Title,
+                        COALESCE
+                        (
+                            TITLES.Val,
+                            TRIM
+                            (
+                                REGEXP_REPLACE
+                                (
+                                    SUBSTR
+                                    (
+                                        A.About,
+                                        INSTR(A.About, '/', -1) + 1
+                                    ),
+                                    '([A-Z])',
+                                    ' \1'
+                                )
+                            )
+                        ) AS Title,
                         TITLES.Lang AS TitleLanguage,
                         RANK() OVER
                         (
@@ -124,8 +150,10 @@ BEGIN
                         (
                             XMLNAMESPACES
                             (
-                                DEFAULT 'https://haddenindustries.com/ontology/universal/reference-data',
-                                'https://haddenindustries.com/ontology/universal/core' AS "uc",
+                                DEFAULT 'http://standards.iso.org/iso-iec/11179/-3/ed-3/',
+                                'https://haddenindustries.com/ontology/universal/reference-data/' AS "rd",
+                                'https://haddenindustries.com/ontology/universal/core/' AS "uc",
+                                'https://haddenindustries.com/ontology/universal/extended/' AS "ue",
                                 'http://www.w3.org/1999/02/22-rdf-syntax-ns#' AS "rdf",
                                 'http://www.w3.org/2000/01/rdf-schema#' AS "rdfs",
                                 'http://www.w3.org/2002/07/owl#' AS "owl",
@@ -255,7 +283,7 @@ BEGIN
         --TOUCH(l_Table_Name);
         NULL;
         
-        l_Email_Body := l_Email_Body || '<td>' || TO_CHAR(SQL%ROWCOUNT) || '</td>'
+        l_Email_Body := l_Email_Body || '<td>' || TEXT_TO_HTML('✓') || '</td>'
         || '</tr>';
         
         
