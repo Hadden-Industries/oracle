@@ -7,7 +7,7 @@ PROCEDURE DROP_FK
 (
     gOwner IN VARCHAR2,
     gTable_Name IN VARCHAR2,
-    gCLOB_Table IN OUT CLOB_TABLE,
+    gCLOB_Table IN OUT T_CLOB_TABLE,
     gDebug IN NUMBER DEFAULT 0
 )
 AUTHID CURRENT_USER
@@ -190,13 +190,13 @@ SET SERVEROUTPUT ON;
 
 DECLARE
     
-    gCLOB_Table RD.CLOB_TABLE := RD.CLOB_TABLE();
+    gCLOB_Table RD.T_CLOB_TABLE := RD.T_CLOB_TABLE();
     
 BEGIN
     
-    RD.DROP_FK('RD', 'TABLELOOKUP', gCLOB_Table, 0);
+    RD.DROP_FK('RD', 'NAMESPACE', gCLOB_Table, 0);
     
-    IF gCLOB_Table.Last <> 0 THEN
+    IF gCLOB_Table.Last != 0 THEN
         
         FOR i IN gCLOB_Table.First..gCLOB_Table.Last LOOP
         
@@ -214,3 +214,4 @@ BEGIN
 END;
 /
 */
+--NAMESPACE#NAMINGCONVENTION_NAMINGCONVENTION_FK gives ORA-06546: DDL statement is executed in an illegal context
