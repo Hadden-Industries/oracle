@@ -388,7 +388,8 @@ BEGIN
             
             BEGIN
                 
-                GOOGLE.Import_Table('GBRONSRGC', vGoogleOutput);
+                --GOOGLE.Import_Table('GBRONSRGC', vGoogleOutput);
+                NULL;
                 
             EXCEPTION
             WHEN OTHERS THEN

@@ -325,7 +325,8 @@ BEGIN
             
             BEGIN
                 
-                GOOGLE.Import_Table(vTable_Name, vGoogleOutput);
+                --GOOGLE.Import_Table(vTable_Name, vGoogleOutput);
+                NULL;
                 
             EXCEPTION
             WHEN OTHERS THEN
